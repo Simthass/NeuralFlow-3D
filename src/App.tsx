@@ -8,6 +8,7 @@ import {
 import { NeuralNetwork } from "./components/NeuralNetwork";
 import { ControlPanel } from "./components/ControlPanel";
 import { GestureController } from "./components/GestureController";
+import { Effects } from "./components/Effects";
 
 const Scene = () => {
   return (
@@ -20,6 +21,7 @@ const Scene = () => {
       <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4f46e5" />
 
       <NeuralNetwork />
+      <Effects />
 
       <Environment preset="city" />
     </>
