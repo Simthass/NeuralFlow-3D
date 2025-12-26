@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -7,6 +7,7 @@ import {
 } from "@react-three/drei";
 import { NeuralNetwork } from "./components/NeuralNetwork";
 import { ControlPanel } from "./components/ControlPanel";
+import { GestureController } from "./components/GestureController";
 
 const Scene = () => {
   return (
@@ -32,6 +33,17 @@ export default function App() {
   const [loss, setLoss] = useState(0.9);
   const [learningRate, setLearningRate] = useState(0.01);
 
+  // Gesture Handlers
+  const handlePinch = useCallback((distance: number) => {
+    // Map pinch distance (approx 0.01 to 0.1) to Learning Rate (0.001 to 0.1)
+    const newRate = Math.min(0.1, Math.max(0.0001, distance));
+    setLearningRate(newRate);
+  }, []);
+
+  const handleToggle = useCallback(() => {
+    setIsTraining((prev) => !prev);
+  }, []);
+
   // Simulation Loop
   useEffect(() => {
     let animationFrame: number;
@@ -41,8 +53,9 @@ export default function App() {
         setEpoch((e) => e + 1);
         setAccuracy((a) => Math.min(0.99, a + (0.99 - a) * 0.001));
         setLoss((l) => Math.max(0.01, l * 0.995));
-        // Vibrate learning rate slightly to simulate adaptive LR
-        setLearningRate(0.01 + Math.sin(Date.now() * 0.001) * 0.002);
+        // Vibrate learning rate slightly to simulate adaptive LR unless controlled by hand
+        // For now, let's keep the vibration if not being pinched, but that requires complex state tracking.
+        // We'll just let the pinch override it instantly in the next frame if active.
       }
       animationFrame = requestAnimationFrame(loop);
     };
@@ -74,6 +87,8 @@ export default function App() {
         loss={loss}
         learningRate={learningRate}
       />
+
+      <GestureController onPinch={handlePinch} onToggle={handleToggle} />
     </div>
   );
 }
