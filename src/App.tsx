@@ -10,7 +10,7 @@ import { ControlPanel } from "./components/ControlPanel";
 import { GestureController } from "./components/GestureController";
 import { Effects } from "./components/Effects";
 
-const Scene = () => {
+const Scene = ({ isTraining }: { isTraining: boolean }) => {
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 10]} />
@@ -20,7 +20,7 @@ const Scene = () => {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4f46e5" />
 
-      <NeuralNetwork />
+      <NeuralNetwork isTraining={isTraining} />
       <Effects />
 
       <Environment preset="city" />
@@ -69,7 +69,7 @@ export default function App() {
   return (
     <div className="h-screen w-full bg-black relative overflow-hidden">
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true }}>
-        <Scene />
+        <Scene isTraining={isTraining} />
       </Canvas>
 
       <div className="absolute top-6 left-6 z-10 pointer-events-none">

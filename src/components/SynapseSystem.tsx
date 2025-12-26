@@ -1,12 +1,14 @@
 import { useRef, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { Line } from "@react-three/drei";
 
 interface SynapseSystemProps {
   layer1count: number;
   layer1pos: [number, number, number];
   layer2count: number;
   layer2pos: [number, number, number];
+  active: boolean; // If training, animate faster
 }
 
 export function SynapseSystem({
@@ -14,66 +16,88 @@ export function SynapseSystem({
   layer1pos,
   layer2count,
   layer2pos,
+  active,
 }: SynapseSystemProps) {
-  const linesRef = useRef<THREE.LineSegments>(null);
+  // Generate random connections instead of ALL connections to reduce clutter and restart loop
+  // Connectivity: ~20% dense
+  const connections = useMemo(() => {
+    const conns = [];
 
-  // Calculate positions of all neurons in both layers to draw lines between them
-  // This needs to match the logic in NeuronLayer.tsx
-  const geometry = useMemo(() => {
-    const points: number[] = [];
-
-    // Reconstruct neuron positions
-    const getNeuronPositions = (
-      count: number,
-      basePos: [number, number, number]
-    ) => {
-      const pos = [];
-      const cols = Math.ceil(Math.sqrt(count));
-      const rows = Math.ceil(count / cols);
-
-      for (let i = 0; i < count; i++) {
-        const x = (i % cols) * 0.5 - cols * 0.5 * 0.5 + 0.25 + basePos[0];
-        const y =
-          Math.floor(i / cols) * 0.5 - rows * 0.5 * 0.5 + 0.25 + basePos[1];
-        const z = basePos[2];
-        pos.push(new THREE.Vector3(x, y, z));
-      }
-      return pos;
+    // Helper to get position from spiral layout (Must match NeuronLayer logic!)
+    const getPos = (i: number, base: [number, number, number]) => {
+      const theta = i * 2.39996;
+      const r = Math.sqrt(i) * 0.6;
+      return new THREE.Vector3(
+        Math.cos(theta) * r + base[0],
+        Math.sin(theta) * r + base[1],
+        base[2]
+      );
     };
 
-    const startPoints = getNeuronPositions(layer1count, layer1pos);
-    const endPoints = getNeuronPositions(layer2count, layer2pos);
+    // Limit max connections for aesthetics
+    const maxConnsPerNeuron = 3;
 
-    // Create full mesh connectivity
-    startPoints.forEach((start) => {
-      endPoints.forEach((end) => {
-        points.push(start.x, start.y, start.z);
-        points.push(end.x, end.y, end.z);
-      });
-    });
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
-    return geo;
+    for (let i = 0; i < layer1count; i++) {
+      // Connect to random subset of next layer
+      for (let j = 0; j < maxConnsPerNeuron; j++) {
+        const targetIdx = Math.floor(Math.random() * layer2count);
+        conns.push({
+          start: getPos(i, layer1pos),
+          end: getPos(targetIdx, layer2pos),
+        });
+      }
+    }
+    return conns;
   }, [layer1count, layer1pos, layer2count, layer2pos]);
 
-  useFrame((state) => {
-    if (linesRef.current) {
-      // Optional: Animate opacity or dash offset here to simulate data flow
-      (linesRef.current.material as THREE.LineBasicMaterial).opacity =
-        0.1 + Math.sin(state.clock.elapsedTime * 2) * 0.05;
+  return (
+    <group>
+      {connections.map((conn, i) => (
+        <EnergyBeam
+          key={i}
+          start={conn.start}
+          end={conn.end}
+          active={active}
+          delay={Math.random() * 2}
+        />
+      ))}
+    </group>
+  );
+}
+
+function EnergyBeam({
+  start,
+  end,
+  active,
+  delay,
+}: {
+  start: THREE.Vector3;
+  end: THREE.Vector3;
+  active: boolean;
+  delay: number;
+}) {
+  const ref = useRef<any>(null);
+
+  useFrame(() => {
+    if (ref.current) {
+      // Dash offset animation for "data flow" look
+      ref.current.material.dashOffset -= active ? 0.02 : 0.005;
     }
   });
 
   return (
-    <lineSegments ref={linesRef} geometry={geometry}>
-      <lineBasicMaterial
-        color="#60a5fa"
-        transparent
-        opacity={0.15}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </lineSegments>
+    <Line
+      ref={ref}
+      points={[start, end]}
+      color={active ? "#ffffff" : "#444444"}
+      opacity={active ? 0.6 : 0.1}
+      transparent
+      lineWidth={1}
+      dashed
+      dashScale={5}
+      dashSize={0.5}
+      dashOffset={delay}
+      gapSize={0.5}
+    />
   );
 }
