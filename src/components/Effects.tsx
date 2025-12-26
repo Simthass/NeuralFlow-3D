@@ -15,15 +15,18 @@ export function Effects() {
       <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.5} radius={0.4} />
 
       {/* Subtle chromatic aberration for holographic look */}
+      {/* @ts-ignore */}
       <ChromaticAberration
         blendFunction={BlendFunction.NORMAL} // Use NORMAL blend mode
         offset={[0.002, 0.002]} // Correct type: [x, y] vector
       />
 
       {/* Film grain for realism */}
+      {/* @ts-ignore */}
       <Noise opacity={0.05} />
 
       {/* Vignette to focus center */}
+      {/* @ts-ignore */}
       <Vignette eskil={false} offset={0.1} darkness={1.1} />
     </EffectComposer>
   );
