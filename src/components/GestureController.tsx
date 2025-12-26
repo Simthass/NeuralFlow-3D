@@ -1,4 +1,3 @@
-```typescript
 import { useRef, useEffect, useState } from "react";
 import Webcam from "react-webcam";
 import { GestureManager } from "../gesture/GestureManager";
